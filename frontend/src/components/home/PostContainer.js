@@ -1,112 +1,150 @@
-import React from "react";
+import React from 'react';
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import IconButton from '@material-ui/core/IconButton';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
+import CardMedia from '@material-ui/core/CardMedia';
 import Typography from '@material-ui/core/Typography';
 import Avatar from '@material-ui/core/Avatar';
-import { makeStyles } from '@material-ui/core/styles';
-import ChatBubbleIcon from '@material-ui/icons/ChatBubble';
+import {makeStyles} from '@material-ui/core/styles';
+import ChatBubbleOutlineOutlinedIcon from '@material-ui/icons/ChatBubbleOutlineOutlined';
 import FavoriteIcon from '@material-ui/icons/Favorite';
-import { blue } from '@material-ui/core/colors';
+import {blue} from '@material-ui/core/colors';
+import {PostActions} from '../../actions/posts.actions';
+import {connect} from 'react-redux';
+import {displayDate} from '../../helpers/util';
+import ClearIcon from '@material-ui/icons/Clear';
+import Modal from '@material-ui/core/Modal';
+import CommentSection from './CommentSection';
+import {history} from '../../helpers/history';
+import {location} from '../../helpers/util';
 
-const mockData = {
-    userID: 'Jerome',
-    time: '20 h',
-    content: `Lorem ipsum dolor sit amet, 
-    consectetur adipiscing elit. 
-    Curabitur at elementum ligula. 
-    Morbi id mauris tempor elit congue bibendum vitae id ex. 
-    Nulla facilisi. Vivamus vulputate non sem quis consectetur. 
-    Integer et euismod elit. Proin fermentum suscipit ipsum, eget blandit lacus rutrum ac. 
-    Morbi aliquet tincidunt dui in imperdiet. Integer ornare, tellus vitae feugiat maximus, 
-    risus odio viverra erat, ut dapibus massa erat sit amet nisi. Sed a semper eros. 
-    Mauris sit amet lorem tellus. Quisque sed neque eget erat hendrerit venenatis vitae in ipsum.`
-};
 
 const styles = makeStyles((theme) => ({
     post: {
         margin: '1rem'
     },
     media: {
-        color: 'white',
-        fontSize: '0.8rem'
+        height: 0,
+        paddingTop: '56.25%',
     },
     avatar: {
-        backgroundColor: blue[200] 
+        backgroundColor: blue[200]
     },
     postContainer: {
-        width: "60%",
-        marginLeft: "20%",
-        marginRight: "20%"
+        width: '100%',
+        marginLeft: '0%',
+        marginRight: '20%'
+    },
+    modal: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'auto'
+    },
+    paper: {
+        position: 'absolute',
+        width: '70%',
+        backgroundColor: theme.palette.background.paper,
+        border: '2px solid #000',
+        boxShadow: theme.shadows[5],
+        top: '10%',
+        left: '15%'
     }
 }));
 
-const PostContainer = () => {
+const PostContainer = (props) => {
+    const [modalIsOpen, setIsOpen] = React.useState(false);
+    const openModal = () => {
+        setIsOpen(true);
+    };
+    const closeModal = () => {
+        setIsOpen(false);
+    };
     const classes = styles();
+
+    const body = (
+        <div className={classes.paper}>
+            <h2 id="simple-modal-title">Text in a modal</h2>
+            <p id="simple-modal-description">
+                Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
+            </p>
+        </div>
+    );
 
     return (
         <div className={classes.postContainer}>
-             <Card className={classes.post} >
-                <CardHeader
-                    avatar={
-                        <Avatar aria-label="profile-pic" className={classes.avatar}>
-                            {mockData.userID}
-                        </Avatar>
-                    }
-                    action={
-                        <IconButton aria-label="settings">
-                            <MoreVertIcon />
-                        </IconButton>
-                    }
-                    title={mockData.userID}
-                    subheader={mockData.time}
-                >
-                </CardHeader>
-                <CardContent>
-                    <Typography variant="body2" color="textPrimary" component="p">
-                        {mockData.content}
-                    </Typography>
-                </CardContent>
-                <IconButton aria-label="chat">
-                    <ChatBubbleIcon color='primary'/>
-                </IconButton>
-                <IconButton aria-label="like">
-                    <FavoriteIcon color='secondary'/>
-                </IconButton>
-            </Card>
-
             <Card className={classes.post}>
                 <CardHeader
                     avatar={
-                        <Avatar aria-label="profile-pic" className={classes.avatar}>
-                            R
-                        </Avatar>
+                        props.location === location.PROFILE ?
+                            <Avatar aria-label="profile-pic" className={classes.avatar} src={props.avatar}>
+                                {props.username}
+                            </Avatar>
+                            : <IconButton onClick={() => {
+                                history.replace({
+                                    pathname: '/home/profile',
+                                    state: {
+                                        homeId: props.userId,
+                                        self: props.currUserId === props.userId
+                                    }
+                                });
+                            }}>
+                                <Avatar aria-label="profile-pic" alt={props.username} className={classes.avatar}
+                                        src={props.avatar}/>
+                            </IconButton>
                     }
                     action={
-                        <IconButton aria-label="settings">
-                            <MoreVertIcon />
-                        </IconButton>
+                        props.currUserId === props.userId ?
+                            <IconButton aria-label="settings"
+                                        onClick={() => props.deletePost(props.postId, props.location)}>
+                                <ClearIcon/>
+                            </IconButton> : ''
                     }
-                    title={mockData.userID}
-                    subheader={mockData.time}
+                    title={props.username}
+                    subheader={displayDate(props.date)}
                 >
                 </CardHeader>
+                {props.imgLink
+                && <CardMedia
+                    className={classes.media}
+                    image={props.imgLink}
+                />}
                 <CardContent>
                     <Typography variant="body2" color="textPrimary" component="p">
-                        {mockData.content}
+                        {props.content}
                     </Typography>
                 </CardContent>
-                <IconButton aria-label="chat">
-                    <ChatBubbleIcon color='primary'/>
+                <IconButton aria-label="chat" onClick={openModal}>
+                    <ChatBubbleOutlineOutlinedIcon color='primary'/>
                 </IconButton>
-                <IconButton aria-label="like">
-                    <FavoriteIcon color='secondary' />
+                <Modal
+                    open={modalIsOpen}
+                    onClose={closeModal}
+                    className={classes.modal}
+                >
+                    <div className={classes.paper}>
+                        <CommentSection postId={props.postId} comments={props.comments} location={props.location}/>
+                    </div>
+                </Modal>
+                <IconButton aria-label="like" onClick={() => props.likePost(props.postId, props.location)}>
+                    <FavoriteIcon color='secondary'/>
                 </IconButton>
+                <span>{props.likes}</span>
             </Card>
         </div>
     );
 };
 
-export default PostContainer;
+const mapStateToProps = (state) => {
+    return {
+        currUserId: state.userinfo.userId
+    };
+};
+
+const mapAction = {
+    likePost: PostActions.likePost,
+    deletePost: PostActions.deletePost,
+};
+
+export default connect(mapStateToProps, mapAction)(PostContainer);
